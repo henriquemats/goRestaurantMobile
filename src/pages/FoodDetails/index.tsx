@@ -73,7 +73,15 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const response = await api.get(`foods/${routeParams.id}`);
+
+      setFood(response.data);
+      setExtras(
+        response.data.extras.map(item => ({
+          ...item,
+          quantity: 0,
+        })),
+      );
     }
 
     loadFood();
@@ -81,17 +89,37 @@ const FoodDetails: React.FC = () => {
 
   function handleIncrementExtra(id: number): void {
     // Increment extra quantity
+    setExtras(
+      extras.map(item =>
+        item.id === id ? { ...item, quantity: item.quantity + 1 } : item,
+      ),
+    );
   }
 
   function handleDecrementExtra(id: number): void {
     // Decrement extra quantity
+    const extraExists = extras.find(
+      item => item.id === id && item.quantity > 0,
+    );
+
+    if (extraExists) {
+      setExtras(
+        extras.map(item =>
+          item.id === id ? { ...item, quantity: item.quantity - 1 } : item,
+        ),
+      );
+    }
   }
 
   function handleIncrementFood(): void {
+    setFoodQuantity(foodQuantity + 1);
     // Increment food quantity
   }
 
   function handleDecrementFood(): void {
+    if (foodQuantity !== 1) {
+      setFoodQuantity(foodQuantity - 1);
+    }
     // Decrement food quantity
   }
 
@@ -101,6 +129,15 @@ const FoodDetails: React.FC = () => {
 
   const cartTotal = useMemo(() => {
     // Calculate cartTotal
+    const totalExtras = extras.reduce((accumulator, currentValue) => {
+      const subtotal = currentValue.value * currentValue.quantity;
+
+      return accumulator + subtotal;
+    }, 0);
+
+    const total = food.price * foodQuantity;
+
+    return formatValue(total + totalExtras);
   }, [extras, food, foodQuantity]);
 
   async function handleFinishOrder(): Promise<void> {
